@@ -38,39 +38,40 @@ import com.example.demo.service.OrderService;
 @Controller
 @RequestMapping(value = "/activity", method = RequestMethod.GET)
 public class ActivityController {
-	
+
 	@Value("${activity.file.path}")
 	private String imageFilePath;
-	
+
 	@Autowired
 	private OrderService orderService;
 
-
 	@Autowired
 	private ActivityService activityService;
-	
+
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String index(Model model) {
 
 		return "redirect:/activity/list";
 	}
-	//時間格式
+
+	// 時間格式
 	DateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/create", method = RequestMethod.GET)
 	public String toAdd(Model model) {
-		model.addAttribute("typeList",activityService.getAllTActivityType());
+		model.addAttribute("typeList", activityService.getAllTActivityType());
 		return "activity/create";
 	}
 
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/doAdd", method = RequestMethod.POST)
-	public ModelAndView doAdd(@ModelAttribute ActivityFormBean activity, @RequestParam("imageFile") MultipartFile file) {
-				
+	public ModelAndView doAdd(@ModelAttribute ActivityFormBean activity,
+			@RequestParam("imageFile") MultipartFile file) {
+
 		TActivity entity = new TActivity();
 		entity.setActivityName(activity.getActivityName());
-		
+
 		entity.setActivityDate(Timestamp.valueOf(activity.getActivityDate().replace("T", " ") + ":00"));
 		entity.setActivityPlace(activity.getActivityPlace());
 		entity.setActiivityDescription(activity.getActiivityDescription());
@@ -79,7 +80,6 @@ public class ActivityController {
 		entity.setActivityType(activity.getActivityType());
 		entity.setActivityStatus("0");
 		entity.setEndTime(Timestamp.valueOf(activity.getEndTime().replace("T", " ") + ":00"));
-//		System.out.println("***************"+entity);
 		TTicket ticketEntity = new TTicket();
 		ticketEntity.setTicketId(activity.getTicketId());
 		ticketEntity.setTicketName(activity.getTicketName());
@@ -87,105 +87,103 @@ public class ActivityController {
 		ticketEntity.setTicketQuantity(activity.getTicketQuantity());
 		ticketEntity.setTicketType(activity.getTicketType());
 
-		if(!file.isEmpty()){
+		if (!file.isEmpty()) {
 			try {
 				activityService.createByImage(entity, ticketEntity, file);
 			} catch (IllegalStateException | IOException e) {
-				
+
 			}
-       	 
-        } else {
-        	
-        	 activityService.create(entity, ticketEntity);
-        	
-        }		
-	
-		return  new ModelAndView("redirect:/activity/browser");
+
+		} else {
+
+			activityService.create(entity, ticketEntity);
+
+		}
+
+		return new ModelAndView("redirect:/activity/browser");
 	}
 
 	@RequestMapping("/{id}/image/{fileName}")
 	public void showPicture(@PathVariable("fileName") String fileName, @PathVariable("id") String id,
-	                           HttpServletResponse response){
-		File imgFile = new File(imageFilePath + "/" + id + "/" +fileName);
-	   responseFile(response, imgFile);
+			HttpServletResponse response) {
+		File imgFile = new File(imageFilePath + "/" + id + "/" + fileName);
+		responseFile(response, imgFile);
 	}
 
-	   private void responseFile(HttpServletResponse response, File imgFile) {
-	       try(InputStream is = new FileInputStream(imgFile);
-	           OutputStream os = response.getOutputStream();){
-	           byte [] buffer = new byte[1024]; 
-	           while(is.read(buffer) != -1){
-	               os.write(buffer);
-	           }
-	           os.flush();
-	       } catch (IOException ioe){
-	           ioe.printStackTrace();
-	       }
-	   }
-	   
+	private void responseFile(HttpServletResponse response, File imgFile) {
+		try (InputStream is = new FileInputStream(imgFile); OutputStream os = response.getOutputStream();) {
+			byte[] buffer = new byte[1024];
+			while (is.read(buffer) != -1) {
+				os.write(buffer);
+			}
+			os.flush();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	public ModelAndView listActivity(ModelAndView model) throws IOException {
 		List<TActivity> entityList = activityService.selectPass();
 		List<ActivityFormBean> beanList = new ArrayList<ActivityFormBean>();
-	
-		for(TActivity entity :entityList) {
+
+		for (TActivity entity : entityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
-			
-//			bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
+
+			// bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
 			bean.setActivityDate(sdf.format(entity.getActivityDate()));
 			bean.setActivityPlace(entity.getActivityPlace());
 			bean.setActiivityDescription(entity.getActiivityDescription());
 			bean.setActivityImage(entity.getActivityImage());
-			bean.setUpdateTime(entity.getUpdateTime());	   
+			bean.setUpdateTime(entity.getUpdateTime());
 			bean.setEndTime(sdf.format(entity.getEndTime()));
 			beanList.add(bean);
 		}
 
 		model.addObject("beanList", beanList);
 		model.setViewName("activity/list");
-		
+
 		return model;
 	}
 
 	@RequestMapping(value = "/{id}/detail", method = RequestMethod.GET)
 	public String detail(Model model, @PathVariable("id") int id) {
 		TActivity entity = activityService.getActivityById(id);
-//		ActivityFormBean beanList = new ActivityFormBean();
-		
-			ActivityFormBean bean = new ActivityFormBean();
-			bean.setActivityId(entity.getActivityId());
-			bean.setActivityName(entity.getActivityName());
-//			bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
-			bean.setActivityDate(sdf.format(entity.getActivityDate()));
-			bean.setActivityPlace(entity.getActivityPlace());
-			bean.setActiivityDescription(entity.getActiivityDescription());
-			bean.setActivityImage(entity.getActivityImage());
-			bean.setActivityHost(entity.getActivityHost());
-			bean.setHostTel(entity.getHostTel());
-			bean.setHostMail(entity.getHostMail());
-			bean.setCreateUser(entity.getCreateUser());
-//			bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
-			bean.setEndTime(sdf.format(entity.getEndTime()));
-		model.addAttribute("bean",bean);
+		// ActivityFormBean beanList = new ActivityFormBean();
+
+		ActivityFormBean bean = new ActivityFormBean();
+		bean.setActivityId(entity.getActivityId());
+		bean.setActivityName(entity.getActivityName());
+		// bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
+		bean.setActivityDate(sdf.format(entity.getActivityDate()));
+		bean.setActivityPlace(entity.getActivityPlace());
+		bean.setActiivityDescription(entity.getActiivityDescription());
+		bean.setActivityImage(entity.getActivityImage());
+		bean.setActivityHost(entity.getActivityHost());
+		bean.setHostTel(entity.getHostTel());
+		bean.setHostMail(entity.getHostMail());
+		bean.setCreateUser(entity.getCreateUser());
+		// bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
+		bean.setEndTime(sdf.format(entity.getEndTime()));
+		model.addAttribute("bean", bean);
 		return "/activity/detail";
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
 	public String toEdit(Model model, @PathVariable("id") int id) {
-		
+
 		TActivity entity = activityService.getActivityByIdAndCurrentUser(id);
-		
-		if(entity != null) {
+
+		if (entity != null) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
 
-
 			bean.setActivityDate(sdf.format(entity.getActivityDate()));
-//			bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
+			// bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
 			bean.setEndTime(sdf.format(entity.getEndTime()));
 			bean.setActivityPlace(entity.getActivityPlace());
 			bean.setActiivityDescription(entity.getActiivityDescription());
@@ -195,21 +193,21 @@ public class ActivityController {
 			model.addAttribute("activity", bean);
 			return "/activity/edit";
 		}
-		
+
 		return "redirect:/activity/browser";
-	
+
 	}
 
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/doEdit", method = RequestMethod.POST)
 	public String doEdit(ActivityFormBean activity) {
-		
+
 		TActivity entity = activityService.getActivityById(activity.getActivityId());
 		entity.setActivityName(activity.getActivityName());
-//		String test = activity.getActivityDate().replace("T", " ") + ":00";
+		// String test = activity.getActivityDate().replace("T", " ") + ":00";
 		entity.setActivityDate(Timestamp.valueOf(activity.getActivityDate().replace("T", " ") + ":00"));
 		entity.setEndTime(Timestamp.valueOf(activity.getEndTime().replace("T", " ") + ":00"));
-//		entity.setEndTime(CommonUtils.stringToTimestamp(activity.getEndTime()));
+		// entity.setEndTime(CommonUtils.stringToTimestamp(activity.getEndTime()));
 		entity.setActivityPlace(activity.getActivityPlace());
 		entity.setActiivityDescription(activity.getActiivityDescription());
 		entity.setHostTel(activity.getHostTel());
@@ -217,39 +215,39 @@ public class ActivityController {
 		entity.setCreateUser(activity.getCreateUser());
 		entity.setActivityType(activity.getActivityType());
 		entity.setActivityImage(activity.getActivityImage());
-		
+
 		activityService.update(entity);
 		return "redirect:/activity/browser";
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/browser", method = RequestMethod.GET)
 	public String toBrowser(Model model) {
-		
-		//未審核
+
+		// 未審核
 		List<TActivity> checkEntityList = activityService.selectCheck();
 		List<ActivityFormBean> checkList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :checkEntityList) {
+
+		for (TActivity entity : checkEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
 			bean.setActivityDate(sdf.format(entity.getActivityDate()));
 			bean.setEndTime(sdf.format(entity.getEndTime()));
-//			bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
+			// bean.setEndTime(CommonUtils.timestampToString(entity.getEndTime()));
 			bean.setActivityPlace(entity.getActivityPlace());
 			bean.setActiivityDescription(entity.getActiivityDescription());
 			bean.setCreateUser(entity.getCreateUser());
 			checkList.add(bean);
 		}
 
-		model.addAttribute("checkList",checkList);
-		
-		//審核中
+		model.addAttribute("checkList", checkList);
+
+		// 審核中
 		List<TActivity> waitEntityList = activityService.selectWaitCheck();
 		List<ActivityFormBean> waitcheckList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :waitEntityList) {
+
+		for (TActivity entity : waitEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -261,13 +259,13 @@ public class ActivityController {
 			waitcheckList.add(bean);
 		}
 
-		model.addAttribute("waitcheckList",waitcheckList);
-		
-		//審核通過
+		model.addAttribute("waitcheckList", waitcheckList);
+
+		// 審核通過
 		List<TActivity> passEntityList = activityService.selectPass();
 		List<ActivityFormBean> passList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :passEntityList) {
+
+		for (TActivity entity : passEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -279,13 +277,13 @@ public class ActivityController {
 			passList.add(bean);
 		}
 
-		model.addAttribute("passList",passList);
-		
-		//取消
+		model.addAttribute("passList", passList);
+
+		// 取消
 		List<TActivity> cancelEntityList = activityService.selectCancel();
 		List<ActivityFormBean> cancelList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :cancelEntityList) {
+
+		for (TActivity entity : cancelEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -297,14 +295,13 @@ public class ActivityController {
 			cancelList.add(bean);
 		}
 
-		model.addAttribute("cancelList",cancelList);
-		
-		
-		//審核未通過
+		model.addAttribute("cancelList", cancelList);
+
+		// 審核未通過
 		List<TActivity> faultEntityList = activityService.faultCheck();
 		List<ActivityFormBean> faultList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :faultEntityList) {
+
+		for (TActivity entity : faultEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -316,21 +313,19 @@ public class ActivityController {
 			faultList.add(bean);
 		}
 
-		model.addAttribute("faultList",faultList);
-		
+		model.addAttribute("faultList", faultList);
+
 		return "/activity/activityBrowser";
 	}
-	
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/search", method = RequestMethod.POST)
 	public String search(Model model, @RequestParam("searchValue") String searchValue) {
-		
-	
+
 		List<TActivity> entityList = activityService.selectSearch(searchValue);
 		List<ActivityFormBean> beanList = new ArrayList<ActivityFormBean>();
-		
-		for(TActivity entity :entityList) {
+
+		for (TActivity entity : entityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -342,26 +337,24 @@ public class ActivityController {
 			beanList.add(bean);
 		}
 
-		model.addAttribute("beanList",beanList);
-	
+		model.addAttribute("beanList", beanList);
 
 		return "/activity/searchactivity";
 	}
-	
+
 	@RequestMapping(value = "/{id}/sendExamine", method = RequestMethod.GET)
 	public String sendExamine(Model model, @PathVariable("id") int id) {
-		
-		//送審
+
+		// 送審
 		activityService.updateSendExamine(id);
 
 		return "redirect:/activity/browser";
 	}
-	
-	
+
 	@RequestMapping(value = "/{id}/cancel", method = RequestMethod.GET)
 	public String cancel(Model model, @PathVariable("id") int id) {
-		
-		//取消
+
+		// 取消
 		activityService.updateCancel(id);
 
 		return "redirect:/activity/browser";
@@ -373,7 +366,7 @@ public class ActivityController {
 		List<TOrder> orderUserList = orderService.getOrderUserList(id);
 		List<TOrderDetail> orderDetailUserList = orderService.getOrderDetailUserList(id);
 		List<OrderFormBean> userList = new ArrayList<OrderFormBean>();
- 		for (int i = 0; i < orderUserList.size(); i++) {
+		for (int i = 0; i < orderUserList.size(); i++) {
 			OrderFormBean bean = new OrderFormBean();
 			bean.setOrderId(orderUserList.get(i).getOrderId());
 			bean.setUserId(orderUserList.get(i).getUserId());
@@ -392,164 +385,161 @@ public class ActivityController {
 		model.addAttribute("userList", userList);
 		return "/activity/userList";
 	}
-//	@PreAuthorize("hasAnyAuthority('U','M')")
-//	@RequestMapping(value = "/doAdd", method = RequestMethod.POST)
-//	public String doAdd(@RequestParam("imageFile") MultipartFile file,ActivityFormBean activity,RedirectAttributes ra) {
-//				
-//		TActivity entity = new TActivity();
-//		entity.setActivityName(activity.getActivityName());
-//		entity.setActivityDate(CommonUtils.stringToTimestamp(activity.getActivityDate()));
-//		entity.setActivityPlace(activity.getActivityPlace());
-//		entity.setActiivityDescription(activity.getActiivityDescription());
-//		entity.setHostTel(activity.getHostTel());
-//		entity.setHostMail(activity.getHostMail());
-//		entity.setActivityType(activity.getActivityType());
-//		entity.setActivityStatus("0");
-//
-//		
-//		TTicket ticketEntity = new TTicket();
-//		ticketEntity.setTicketId(activity.getTicketId());
-//		ticketEntity.setTicketName(activity.getTicketName());
-//		ticketEntity.setTicketPrice(activity.getTicketPrice());
-//		ticketEntity.setTicketQuantity(activity.getTicketQuantity());
-//		ticketEntity.setTicketType(activity.getTicketType());
-//
-//  
-//		TActivity rs = null;
-//		if(!file.isEmpty()){
-//			try {
-//				rs = activityService.createByImage(entity, ticketEntity, file);
-//			} catch (IllegalStateException | IOException e) {
-//				
-//			}
-//       	 
-//        } else {
-//        	
-//        	rs = activityService.create(entity, ticketEntity);
-//        	
-//        }		
-//
-//		ra.addAttribute("activityId", rs.getActivityId());
-//		return "redirect:/activity/list";
-//	}
+	// @PreAuthorize("hasAnyAuthority('U','M')")
+	// @RequestMapping(value = "/doAdd", method = RequestMethod.POST)
+	// public String doAdd(@RequestParam("imageFile") MultipartFile
+	// file,ActivityFormBean activity,RedirectAttributes ra) {
+	//
+	// TActivity entity = new TActivity();
+	// entity.setActivityName(activity.getActivityName());
+	// entity.setActivityDate(CommonUtils.stringToTimestamp(activity.getActivityDate()));
+	// entity.setActivityPlace(activity.getActivityPlace());
+	// entity.setActiivityDescription(activity.getActiivityDescription());
+	// entity.setHostTel(activity.getHostTel());
+	// entity.setHostMail(activity.getHostMail());
+	// entity.setActivityType(activity.getActivityType());
+	// entity.setActivityStatus("0");
+	//
+	//
+	// TTicket ticketEntity = new TTicket();
+	// ticketEntity.setTicketId(activity.getTicketId());
+	// ticketEntity.setTicketName(activity.getTicketName());
+	// ticketEntity.setTicketPrice(activity.getTicketPrice());
+	// ticketEntity.setTicketQuantity(activity.getTicketQuantity());
+	// ticketEntity.setTicketType(activity.getTicketType());
+	//
+	//
+	// TActivity rs = null;
+	// if(!file.isEmpty()){
+	// try {
+	// rs = activityService.createByImage(entity, ticketEntity, file);
+	// } catch (IllegalStateException | IOException e) {
+	//
+	// }
+	//
+	// } else {
+	//
+	// rs = activityService.create(entity, ticketEntity);
+	//
+	// }
+	//
+	// ra.addAttribute("activityId", rs.getActivityId());
+	// return "redirect:/activity/list";
+	// }
 
+	// @RequestMapping(value = "/list", method = RequestMethod.GET)
+	// public String list(Model model) {
+	//
+	// List<TActivity> entityList = activityService.selectPass();
+	// List<ActivityFormBean> beanList = new ArrayList<ActivityFormBean>();
+	//
+	// for(TActivity entity :entityList) {
+	// ActivityFormBean bean = new ActivityFormBean();
+	// bean.setActivityId(entity.getActivityId());
+	// bean.setActivityName(entity.getActivityName());
+	// bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
+	// bean.setActivityPlace(entity.getActivityPlace());
+	// bean.setActiivityDescription(entity.getActiivityDescription());
+	// bean.setActivityImage(entity.getActivityImage());
+	// beanList.add(bean);
+	// }
+	//
+	// model.addAttribute("beanList", beanList);
+	// return "activity/list";
+	// }
 
-//		@RequestMapping(value = "/list", method = RequestMethod.GET)
-//		public String list(Model model) {
-//
-//			List<TActivity> entityList = activityService.selectPass();
-//			List<ActivityFormBean> beanList = new ArrayList<ActivityFormBean>();
-//		
-//			for(TActivity entity :entityList) {
-//				ActivityFormBean bean = new ActivityFormBean();
-//				bean.setActivityId(entity.getActivityId());
-//				bean.setActivityName(entity.getActivityName());
-//				bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
-//				bean.setActivityPlace(entity.getActivityPlace());
-//				bean.setActiivityDescription(entity.getActiivityDescription());
-//				bean.setActivityImage(entity.getActivityImage());
-//				beanList.add(bean);
-//			}
-//
-//			model.addAttribute("beanList", beanList);
-//			return "activity/list";
-//		}	   
-	   
-	   
-//	    @PreAuthorize("hasAnyAuthority('U','M')")
-//		@RequestMapping(value = "/{id}/preview", method = RequestMethod.GET)
-//		public String preview(Model model, @PathVariable("id") int id) {
-//			TActivity entity = activityService.getActivityById(id);	
-//				ActivityFormBean bean = new ActivityFormBean();
-//				bean.setActivityId(entity.getActivityId());
-//				bean.setActivityName(entity.getActivityName());
-//				bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
-//				bean.setActivityPlace(entity.getActivityPlace());
-//				bean.setActiivityDescription(entity.getActiivityDescription());
-//				bean.setActivityImage(entity.getActivityImage());
-//				bean.setActivityHost(entity.getActivityHost());
-//				bean.setHostTel(entity.getHostTel());
-//				bean.setHostMail(entity.getHostMail());
-//		        
-//				List<TTicket> entitylist= ticketService.getByActivityId(id);
-//				List<TicketFormBean> ticket = new ArrayList<TicketFormBean>();
-//				for(TTicket entity1 :entitylist) {
-//					TicketFormBean bean1 = new TicketFormBean();
-//					bean1.setTicketId(entity1.getTicketId());
-//					bean1.setActivityName(entity1.getActivityName());
-//					bean1.setTicketName(entity1.getTicketName());
-//					bean1.setTicketPrice(entity1.getTicketPrice());
-//					bean1.setTicketQuantity(entity1.getTicketQuantity());
-//					bean1.setTicketType(entity1.getTicketType());
-//					ticket.add(bean1);
-//				}
-//				
-//			model.addAttribute("bean",bean);
-//			model.addAttribute("ticketList",ticket);
-//			return "/activity/preview";
-//		}
+	// @PreAuthorize("hasAnyAuthority('U','M')")
+	// @RequestMapping(value = "/{id}/preview", method = RequestMethod.GET)
+	// public String preview(Model model, @PathVariable("id") int id) {
+	// TActivity entity = activityService.getActivityById(id);
+	// ActivityFormBean bean = new ActivityFormBean();
+	// bean.setActivityId(entity.getActivityId());
+	// bean.setActivityName(entity.getActivityName());
+	// bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
+	// bean.setActivityPlace(entity.getActivityPlace());
+	// bean.setActiivityDescription(entity.getActiivityDescription());
+	// bean.setActivityImage(entity.getActivityImage());
+	// bean.setActivityHost(entity.getActivityHost());
+	// bean.setHostTel(entity.getHostTel());
+	// bean.setHostMail(entity.getHostMail());
+	//
+	// List<TTicket> entitylist= ticketService.getByActivityId(id);
+	// List<TicketFormBean> ticket = new ArrayList<TicketFormBean>();
+	// for(TTicket entity1 :entitylist) {
+	// TicketFormBean bean1 = new TicketFormBean();
+	// bean1.setTicketId(entity1.getTicketId());
+	// bean1.setActivityName(entity1.getActivityName());
+	// bean1.setTicketName(entity1.getTicketName());
+	// bean1.setTicketPrice(entity1.getTicketPrice());
+	// bean1.setTicketQuantity(entity1.getTicketQuantity());
+	// bean1.setTicketType(entity1.getTicketType());
+	// ticket.add(bean1);
+	// }
+	//
+	// model.addAttribute("bean",bean);
+	// model.addAttribute("ticketList",ticket);
+	// return "/activity/preview";
+	// }
 
-//	    @PreAuthorize("hasAnyAuthority('U','M')")
-//		@RequestMapping(value = "/{id}/signin", method = RequestMethod.GET)
-//		public String signin(Model model, @PathVariable("id") int id) {
-//			
-//			TActivity entity = activityService.getActivityById(id);	
-//			ActivityFormBean bean = new ActivityFormBean();
-//			
-//				bean.setActivityId(entity.getActivityId());
-//				bean.setActivityName(entity.getActivityName());
-//				bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
-//				bean.setActivityPlace(entity.getActivityPlace());
-//				bean.setActiivityDescription(entity.getActiivityDescription());
-//				bean.setActivityImage(entity.getActivityImage());
-//				bean.setHostTel(entity.getHostTel());
-//				bean.setHostMail(entity.getHostMail());
-//				
-//			List<TTicket> entity1= ticketService.getByActivityId(id);
-//			List<TicketFormBean> ticket1 = new ArrayList<TicketFormBean>();	
-//			
-//
-//			for(TTicket entity2 :entity1) {
-//				TicketFormBean ticketbean = new TicketFormBean();
-//			
-//				ticketbean.setTicketId(entity2.getTicketId());
-//				ticketbean.setTicketName(entity2.getTicketName());
-//				ticketbean.setTicketPrice(entity2.getTicketPrice());
-//				ticketbean.setTicketRemain(entity2.getTicketRemain());
-//				ticketbean.setTicketType(entity2.getTicketType());
-//				
-//				ticket1.add(ticketbean);
-//			}
-//		        
-//			model.addAttribute("bean",bean);
-//			model.addAttribute("ticket",ticket1);
-//			return "/signin/signintable";
-//		}
-		
-		
-		
-//		@PreAuthorize("hasAnyAuthority('U','M')")
-//		@RequestMapping(value = "/addsignin", method = RequestMethod.POST)
-//		public String addsignin(ActivityFormBean activity,RedirectAttributes ra) {
-//					
-//			TActivity entity = new TActivity();
-//			entity.setActivityName(activity.getActivityName());
-//			entity.setActivityDate(CommonUtils.stringToTimestamp(activity.getActivityDate()));
-//			entity.setActivityPlace(activity.getActivityPlace());
-//			entity.setActiivityDescription(activity.getActiivityDescription());
-//			entity.setHostTel(activity.getHostTel());
-//			entity.setHostMail(activity.getHostMail());			
-//			
-//			TSaveticket saveticketEntity = new TSaveticket();
-//			saveticketEntity.set
-//			saveticketEntity.setTicketName(activity.getTicketName());
-//			saveticketEntity.setTicketPrice(activity.getTicketPrice());
-//			saveticketEntity.setTicketQuantity(activity.getTicketQuantity());
-//			saveticketEntity.setTicketType(activity.getTicketType());	
-//			
-//			TActivity rs = activityService.create(entity, ticketEntity);
-//			ra.addAttribute("activityId", rs.getActivityId());
-//			
-//			return "redirect:/activity/list";
-//		}
+	// @PreAuthorize("hasAnyAuthority('U','M')")
+	// @RequestMapping(value = "/{id}/signin", method = RequestMethod.GET)
+	// public String signin(Model model, @PathVariable("id") int id) {
+	//
+	// TActivity entity = activityService.getActivityById(id);
+	// ActivityFormBean bean = new ActivityFormBean();
+	//
+	// bean.setActivityId(entity.getActivityId());
+	// bean.setActivityName(entity.getActivityName());
+	// bean.setActivityDate(CommonUtils.timestampToString(entity.getActivityDate()));
+	// bean.setActivityPlace(entity.getActivityPlace());
+	// bean.setActiivityDescription(entity.getActiivityDescription());
+	// bean.setActivityImage(entity.getActivityImage());
+	// bean.setHostTel(entity.getHostTel());
+	// bean.setHostMail(entity.getHostMail());
+	//
+	// List<TTicket> entity1= ticketService.getByActivityId(id);
+	// List<TicketFormBean> ticket1 = new ArrayList<TicketFormBean>();
+	//
+	//
+	// for(TTicket entity2 :entity1) {
+	// TicketFormBean ticketbean = new TicketFormBean();
+	//
+	// ticketbean.setTicketId(entity2.getTicketId());
+	// ticketbean.setTicketName(entity2.getTicketName());
+	// ticketbean.setTicketPrice(entity2.getTicketPrice());
+	// ticketbean.setTicketRemain(entity2.getTicketRemain());
+	// ticketbean.setTicketType(entity2.getTicketType());
+	//
+	// ticket1.add(ticketbean);
+	// }
+	//
+	// model.addAttribute("bean",bean);
+	// model.addAttribute("ticket",ticket1);
+	// return "/signin/signintable";
+	// }
+
+	// @PreAuthorize("hasAnyAuthority('U','M')")
+	// @RequestMapping(value = "/addsignin", method = RequestMethod.POST)
+	// public String addsignin(ActivityFormBean activity,RedirectAttributes ra) {
+	//
+	// TActivity entity = new TActivity();
+	// entity.setActivityName(activity.getActivityName());
+	// entity.setActivityDate(CommonUtils.stringToTimestamp(activity.getActivityDate()));
+	// entity.setActivityPlace(activity.getActivityPlace());
+	// entity.setActiivityDescription(activity.getActiivityDescription());
+	// entity.setHostTel(activity.getHostTel());
+	// entity.setHostMail(activity.getHostMail());
+	//
+	// TSaveticket saveticketEntity = new TSaveticket();
+	// saveticketEntity.set
+	// saveticketEntity.setTicketName(activity.getTicketName());
+	// saveticketEntity.setTicketPrice(activity.getTicketPrice());
+	// saveticketEntity.setTicketQuantity(activity.getTicketQuantity());
+	// saveticketEntity.setTicketType(activity.getTicketType());
+	//
+	// TActivity rs = activityService.create(entity, ticketEntity);
+	// ra.addAttribute("activityId", rs.getActivityId());
+	//
+	// return "redirect:/activity/list";
+	// }
 }
