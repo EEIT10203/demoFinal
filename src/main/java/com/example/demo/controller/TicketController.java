@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.example.demo.entity.TActivity;
 import com.example.demo.entity.TOrder;
 import com.example.demo.entity.TTicket;
+import com.example.demo.formbean.ActivityFormBean;
 import com.example.demo.formbean.OrderFormBean;
 import com.example.demo.formbean.TicketFormBean;
 import com.example.demo.repository.TicketDetailRepository;
@@ -33,7 +36,7 @@ public class TicketController {
 
 	@Autowired
 	private ActivityService activityService;
-	
+
 	@Autowired
 	TicketDetailRepository ticketDetailRepository;
 
@@ -49,6 +52,8 @@ public class TicketController {
 		model.addAttribute("activityId", id);
 		return "ticket/setticket";
 	}
+
+	DateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm");
 
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/doAdd", method = RequestMethod.POST)
@@ -73,9 +78,25 @@ public class TicketController {
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/tickethomepage", method = RequestMethod.GET)
 	public String tickethomepage(Model model) {
+		// 我參加的活動
+		List<Integer> activityIds = orderService.getMyOrderList();
+		List<ActivityFormBean> myOrderList = new ArrayList<ActivityFormBean>();
+		for (int id : activityIds) {
+			TActivity entity = activityService.getActivityById(id);
+			ActivityFormBean bean = new ActivityFormBean();
+			bean.setActivityId(entity.getActivityId());
+			bean.setActivityName(entity.getActivityName());
+			bean.setActivityDate(sdf.format(entity.getActivityDate()));
+			bean.setEndTime(sdf.format(entity.getEndTime()));
+			bean.setActivityPlace(entity.getActivityPlace());
+			bean.setActiivityDescription(entity.getActiivityDescription());
+			bean.setCreateUser(entity.getCreateUser());
+			myOrderList.add(bean);
+		}
+		model.addAttribute("myOrderList", myOrderList);
 
-//		List list = ticketDetailRepository.getTicketByOrder(0);
-//		System.out.println("***tickethomepage: " + list);
+		// List list = ticketDetailRepository.getTicketByOrder(0);
+		// System.out.println("***tickethomepage: " + list);
 		// 未付款
 		List<TOrder> waitpayEntityList = orderService.waitpayCheck();
 		List<OrderFormBean> waitpayList = new ArrayList<OrderFormBean>();
@@ -86,9 +107,8 @@ public class TicketController {
 			bean.setActivityName(entity.getActivityName());
 			bean.setUserId(entity.getUserId());
 			bean.setActivityId(entity.getActivityId());
-			
+
 			bean.setTicketList(ticketService.getTicketByOrder(entity.getOrderId()));
-			
 
 			waitpayList.add(bean);
 		}
@@ -98,7 +118,7 @@ public class TicketController {
 		// 已付款
 		List<TOrder> payEntityList = orderService.pay();
 		List<OrderFormBean> payList = new ArrayList<OrderFormBean>();
-//		List<TActivity> activity =activityService.selectWaitCheck();
+		// List<TActivity> activity =activityService.selectWaitCheck();
 
 		for (TOrder entity : payEntityList) {
 			OrderFormBean bean = new OrderFormBean();
@@ -106,12 +126,10 @@ public class TicketController {
 			bean.setActivityName(entity.getActivityName());
 			bean.setActivityId(entity.getActivityId());
 			bean.setUserId(entity.getUserId());
-			
-			
+
 			bean.setTicketList(ticketService.getTicketByOrder(entity.getOrderId()));
 			payList.add(bean);
-			
-				
+
 		}
 		System.out.println("***tickethomepage: " + payList.size());
 		model.addAttribute("payList", payList);
@@ -126,7 +144,7 @@ public class TicketController {
 			bean.setActivityName(entity.getActivityName());
 			bean.setActivityId(entity.getActivityId());
 			bean.setUserId(entity.getUserId());
-			
+
 			bean.setTicketList(ticketService.getTicketByOrder(entity.getOrderId()));
 			cancelList.add(bean);
 		}

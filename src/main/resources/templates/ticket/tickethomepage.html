@@ -17,26 +17,21 @@ function del() {
  } 
 } 
 </script> 
-        <title>票券中心</title>
+        <title>我的活動</title>
     </head>
     <body>
         <div th:replace="fragments/header :: header"></div>
 		<div class="container">
 			<div>
 
-		<h2>票券查詢</h2>
-		
-		
+		<h2>檢視活動</h2>
+			
 		<ul class="nav nav-tabs" id="myTab" role="tablist">
 		 <li class="nav-item">
-		    <a class="nav-link " id="check-tab" data-toggle="tab" href="#check" role="tab" aria-controls="check" aria-selected="true">我參加的活動</a>
-		  </li>
+		    <a class="nav-link active" id="join-tab" data-toggle="tab" href="#join" role="tab" aria-controls="join" aria-selected="true">我參加的活動</a>
+		  </li>	  
 		  <li class="nav-item">
-		    <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="true">參加活動歷史</a>
-		  </li>
-		  
-		  <li class="nav-item">
-		    <a class="nav-link active" id="waitpay-tab" data-toggle="tab" href="#waitpay" role="tab" aria-controls="waitpay" aria-selected="true">待付款</a>
+		    <a class="nav-link" id="waitpay-tab" data-toggle="tab" href="#waitpay" role="tab" aria-controls="waitpay" aria-selected="true">待付款</a>
 		  </li>
 		  <li class="nav-item">
 		    <a class="nav-link" id="pay-tab" data-toggle="tab" href="#pay" role="tab" aria-controls="pay" aria-selected="false">已付款</a>
@@ -44,41 +39,57 @@ function del() {
 		   <li class="nav-item">
 		    <a class="nav-link" id="cancel-tab" data-toggle="tab" href="#cancel" role="tab" aria-controls="cancel" aria-selected="false">已取消</a>
 		  </li>
+		  <li class="nav-item">
+		    <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="true">歷史活動紀錄</a>
+		  </li>
 		</ul>
 		
-		<div class="tab-content" id="myTabContent">
-		  <div class="tab-pane fade show active" id="check" role="tabpanel" aria-labelledby="check-tab">
+		<div class="tab-content" id="myTabContent">		 
+		
+			<div class="tab-pane fade show active" id="join" role="tabpanel" aria-labelledby="check-tab">
 		  <table class="table table-hover">
 		     <thead>
 		        <tr>
 		            <th></th>
 					<th>活動名稱</th>
-					<th>活動日期</th>
+					<th>活動開始日期</th>
+					<th>活動結束日期</th>
 					<th>活動地點</th>
 					<th>活動說明</th>
-					<th>活動創辦人</th>
+					<th></th>
 		            <th></th>
 		        </tr>
 		        </thead>
 		        <tbody>
-		        <tr  th:each=" bean: ${checkList}" th:if="${#authentication.name != bean.createUser}">
+		        <tr  th:each=" bean: ${myOrderList}" >
 		            <th scope="row" th:text="${bean.activityId}"></th>
 		            <td ><a th:href="@{${'/activity/'+bean.activityId+'/detail'}}"><label  th:text="${bean.activityName}"></label></a></td>
 		            <td th:text="${bean.activityDate}"></td>
+		            <td th:text="${bean.endTime}"></td>
 		            <td th:text="${bean.activityPlace}"></td>
 					<td th:text="${bean.actiivityDescription}"></td>
-					<td th:text="${bean.activityHost}"></td>
 					<td>
+					<div >
+					<!-- <a th:href="@{${'/activity/'+bean.activityId+'/edit'}}" class="btn btn-info" >編輯</a>
+					<a th:href="@{${'/activity/'+bean.activityId+'/cancel'}}" onclick="javascript:return del()" class="btn btn-info" >取消活動</a>
+					<a th:href="@{${'/activity/'+bean.activityId+'/sendExamine'}}" onclick="javascript:return send()" class="btn btn-info" >提交審核</a> -->
+					</div>
 					</td>
 		        </tr>
 		        </tbody>
 		    </table>
-		  </div>
-		  
-
-		</div>
-		
-		<div class="tab-content" id="myTabContent">
+		  </div>	 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
+			 	  
 		  <div class="tab-pane fade show active" id="waitpay" role="tabpanel" aria-labelledby="waitpay-tab">
 		  
 			<div class="accordion" id="accordionWait">
@@ -127,9 +138,98 @@ function del() {
 			  </div>
 			</div>		  
 		  </div>
-		  <div class="tab-pane fade" id="pay" role="tabpanel" aria-labelledby="pay-tab">
+
+			<div class="tab-pane fade" id="join" role="tabpanel" aria-labelledby="join-tab"> 
+		  <div class="accordion" id="accordionJoin">
+			  <div class="card" th:each=" bean: ${joinList}" th:if="${#authentication.name == bean.userId}">
+			    <div class="card-header" th:id="'headingOne'+${bean.orderId}">
+			      <h5 class="mb-0">
+			      <a th:href="@{${'/activity/'+bean.activityId+'/detail'}}"><label  th:text="${bean.activityName}"></label></a>
+  		          </h5>
+  		                 訂單編號:<label  th:text="${bean.orderId}"></label> 
+			      <button class="btn btn-info" type="button" data-toggle="collapse" th:data-target="'#collapse'+${bean.orderId}" aria-expanded="false" th:aria-controls="'#collapse'+${bean.orderId}">
+			               票券
+			      </button>
+			      <a th:href="@{${'/order/'+bean.orderId+'/cancel'}}" onclick="javascript:return del()" class="btn btn-info" >取消訂單</a>
+			    </div>
+			
+			    <div th:id="'collapse'+${bean.orderId}" class="collapse" th:aria-labelledby="'heading'+${bean.orderId}" data-parent="#accordionJoin">
+			      <div class="card-body">
+					  <table class="table table-hover">
+					     <thead>
+					        <tr>
+								<th>票券號碼</th>
+								<th>參加人</th>
+								<th>票券單價</th>
+								<th>票券狀態</th>
+					        </tr>
+					        </thead>
+					        <tbody>
+					        <tr  th:each="ticket: ${bean.ticketList}" th:if="${#authentication.name == bean.userId}">
+					            <td><label  th:text="${ticket.ticketNo}"></label></td>
+					            <td><label  th:text="${bean.userId}"></label></td>
+								<td><label  th:text="${ticket.ticketPrice}"></label></td>
+								<td>
+								<label  th:text="未付款" th:if="${ticket.ticketStatus} ==0"></label>
+								<label  th:text="已付款" th:if="${ticket.ticketStatus} ==2"></label>
+								<label  th:text="取消" th:if="${ticket.ticketStatus} ==9"></label>
+								</td>
+					        </tr>
+					        </tbody>
+					    </table>
+			      </div>
+			    </div>	    
+			    
+			  </div>
+			</div>		
+			</div>
+
+			<div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab"> 
+		  <div class="accordion" id="accordionHistory">
+			  <div class="card" th:each=" bean: ${historyList}" th:if="${#authentication.name == bean.userId}">
+			    <div class="card-header" th:id="'headingOne'+${bean.orderId}">
+			      <h5 class="mb-0">
+			      <a th:href="@{${'/activity/'+bean.activityId+'/detail'}}"><label  th:text="${bean.activityName}"></label></a>
+  		          </h5>
+  		                 訂單編號:<label  th:text="${bean.orderId}"></label> 
+			      <button class="btn btn-info" type="button" data-toggle="collapse" th:data-target="'#collapse'+${bean.orderId}" aria-expanded="false" th:aria-controls="'#collapse'+${bean.orderId}">
+			               票券
+			      </button>
+			      <a th:href="@{${'/order/'+bean.orderId+'/cancel'}}" onclick="javascript:return del()" class="btn btn-info" >取消訂單</a>
+			    </div>
+			
+			    <div th:id="'collapse'+${bean.orderId}" class="collapse" th:aria-labelledby="'heading'+${bean.orderId}" data-parent="#accordionHistory">
+			      <div class="card-body">
+					  <table class="table table-hover">
+					     <thead>
+					        <tr>
+								<th>票券號碼</th>
+								<th>參加人</th>
+								<th>票券單價</th>
+								<th>票券狀態</th>
+					        </tr>
+					        </thead>
+					        <tbody>
+					        <tr  th:each="ticket: ${bean.ticketList}" th:if="${#authentication.name == bean.userId}">
+					            <td><label  th:text="${ticket.ticketNo}"></label></td>
+					            <td><label  th:text="${bean.userId}"></label></td>
+								<td><label  th:text="${ticket.ticketPrice}"></label></td>
+								<td>
+								<label  th:text="未付款" th:if="${ticket.ticketStatus} ==0"></label>
+								<label  th:text="已付款" th:if="${ticket.ticketStatus} ==2"></label>
+								<label  th:text="取消" th:if="${ticket.ticketStatus} ==9"></label>
+								</td>
+					        </tr>
+					        </tbody>
+					    </table>
+			      </div>
+			    </div>	    		    
+			  </div>
+			</div>			
+			</div>
+
 		  
-		  
+		  <div class="tab-pane fade" id="pay" role="tabpanel" aria-labelledby="pay-tab"> 
 		  <div class="accordion" id="accordionPay">
 			  <div class="card" th:each=" bean: ${payList}" th:if="${#authentication.name == bean.userId}">
 			    <div class="card-header" th:id="'headingOne'+${bean.orderId}">
@@ -140,7 +240,7 @@ function del() {
 			      <button class="btn btn-info" type="button" data-toggle="collapse" th:data-target="'#collapse'+${bean.orderId}" aria-expanded="false" th:aria-controls="'#collapse'+${bean.orderId}">
 			               票券
 			      </button>
-			      <a th:href="@{${'/order/'+bean.orderId+'/cancel'}}" class="btn btn-info" >取消訂單</a>
+			      <a th:href="@{${'/order/'+bean.orderId+'/cancel'}}" onclick="javascript:return del()" class="btn btn-info" >取消訂單</a>
 			    </div>
 			
 			    <div th:id="'collapse'+${bean.orderId}" class="collapse" th:aria-labelledby="'heading'+${bean.orderId}" data-parent="#accordionPay">
@@ -176,7 +276,6 @@ function del() {
 			</div>
 
 		  <div class="tab-pane fade" id="cancel" role="tabpanel" aria-labelledby="cancel-tab">
-		  
 		  <div class="accordion" id="accordionCancel">
 			  <div class="card" th:each=" bean: ${cancelList}" th:if="${#authentication.name == bean.userId}">
 			    <div class="card-header" th:id="'headingOne'+${bean.orderId}">

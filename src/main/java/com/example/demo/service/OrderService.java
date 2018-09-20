@@ -182,4 +182,9 @@ public class OrderService {
 		return orderDetailRepository.getAddOrderDetail(activityId);
 	}
 
+	// 我參加的活動
+	public List<Integer> getMyOrderList() {
+		return orderRepository.getMYOrderDetail(currentuser.getUserId());
+	}
+
 }
