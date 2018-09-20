@@ -15,12 +15,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.example.demo.entity.TActivity;
 import com.example.demo.entity.TMessage;
-import com.example.demo.entity.TOrder;
-import com.example.demo.entity.TOrderDetail;
 import com.example.demo.entity.TUser;
 import com.example.demo.formbean.ActivityFormBean;
 import com.example.demo.formbean.MessageFormBean;
-import com.example.demo.formbean.OrderFormBean;
 import com.example.demo.formbean.UserFormBean;
 import com.example.demo.service.ActivityService;
 import com.example.demo.service.MessageService;
@@ -29,45 +26,44 @@ import com.example.demo.service.UserService;
 import com.example.demo.utils.CommonUtils;
 import com.example.demo.utils.CurrentUser;
 
-
 @Controller
-@RequestMapping(value="/member", method = RequestMethod.GET)
+@RequestMapping(value = "/member", method = RequestMethod.GET)
 public class MemberHomeController {
-    
+
 	@Autowired
 	private UserService userService;
-	
+
 	@Autowired
 	private ActivityService activityService;
-	
+
 	@Autowired
 	private OrderService orderService;
-	
+
 	@Autowired
 	private CurrentUser currentuser;
-	
+
 	@Autowired
 	private MessageService messageService;
-	
-    @RequestMapping(value="/", method = RequestMethod.GET)
-    public String index(Model model) {
-    		
-    	return "redirect:/member/home";
-    }
-    
-    @RequestMapping(value="/home", method = RequestMethod.GET)
-    public String home(Model model) {
-    		
-    	return "home";
-    }
-    
+
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public String index(Model model) {
+
+		return "redirect:/member/home";
+	}
+
+	@RequestMapping(value = "/home", method = RequestMethod.GET)
+	public String home(Model model) {
+
+		return "home";
+	}
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/edit", method = RequestMethod.GET)
 	public String toEdit(Model model) {
 
 		TUser entity = userService.getUserById(currentuser.getUserId());
-	
-		if(entity != null) {
+
+		if (entity != null) {
 			UserFormBean bean = new UserFormBean();
 			bean.setEmail(entity.getEmail());
 			bean.setMobile(entity.getMobile());
@@ -79,20 +75,20 @@ public class MemberHomeController {
 			bean.setUserSex(entity.getUserSex());
 			bean.setUserId(entity.getUserId());
 			bean.setUserPhoto(entity.getUserPhoto());
-//			System.out.println("*******************toEidt"+bean.getUserId());
-			
+			// System.out.println("*******************toEidt"+bean.getUserId());
+
 			model.addAttribute("user", bean);
 			return "/user/userEdit";
 		}
-		
+
 		return "redirect:/member/home";
-	
+
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/doEdit", method = RequestMethod.POST)
 	public String doEdit(UserFormBean user) {
-		
+
 		TUser entity = userService.getUserById(user.getUserId());
 		System.out.println(entity);
 		entity.setEmail(user.getEmail());
@@ -109,15 +105,14 @@ public class MemberHomeController {
 		userService.update(entity);
 		return "redirect:/member/home";
 	}
-	
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/verify", method = RequestMethod.GET)
 	public String varify(Model model) {
 
 		TUser entity = userService.getUserById(currentuser.getUserId());
-	
-		if(entity != null) {
+
+		if (entity != null) {
 			UserFormBean bean = new UserFormBean();
 			bean.setUserName(entity.getUserName());
 			bean.setUserId(entity.getUserId());
@@ -128,27 +123,27 @@ public class MemberHomeController {
 			model.addAttribute("user", bean);
 			return "/user/accountverify";
 		}
-		
+
 		return "redirect:/member/home";
-	
+
 	}
-	
+
 	@RequestMapping(value = "/{id}/sendExamine", method = RequestMethod.GET)
 	public String sendExamine(Model model, @PathVariable("id") String userId) {
-		
-		//送審
+
+		// 送審
 		userService.updateSendExamine(userId);
 
 		return "redirect:/member/verify";
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/myhomepage", method = RequestMethod.GET)
 	public String myhomepage(Model model) {
 
 		TUser entity = userService.getUserById(currentuser.getUserId());
-	
-		if(entity != null) {
+
+		if (entity != null) {
 			UserFormBean bean = new UserFormBean();
 			bean.setEmail(entity.getEmail());
 			bean.setMobile(entity.getMobile());
@@ -160,49 +155,47 @@ public class MemberHomeController {
 			bean.setUserSex(entity.getUserSex());
 			bean.setUserId(entity.getUserId());
 			bean.setUserPhoto(entity.getUserPhoto());
-//			System.out.println("*******************toEidt"+bean.getUserId());
-			
+			// System.out.println("*******************toEidt"+bean.getUserId());
+
 			model.addAttribute("user", bean);
 			return "/user/myhomepage";
 		}
-		
+
 		return "redirect:/member/myhomepage";
-	
+
 	}
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/systemmessage", method = RequestMethod.GET)
 	public ModelAndView listMessage(ModelAndView model) throws IOException {
 		List<TMessage> entityList = messageService.selectAll();
 		List<MessageFormBean> beanList = new ArrayList<MessageFormBean>();
-	
-		for(TMessage entity :entityList) {
+
+		for (TMessage entity : entityList) {
 			MessageFormBean bean = new MessageFormBean();
 			bean.setMessageId(entity.getMessageId());
 			bean.setMessageName(entity.getMessageName());
 			bean.setMessage(entity.getMessage());
 			bean.setSendTime(CommonUtils.timestampToString(entity.getSendTime()));
 
-
 			beanList.add(bean);
 		}
 
 		model.addObject("beanList", beanList);
 		model.setViewName("user/systemmessage");
-		
+
 		return model;
 	}
-	
-	
+
 	@PreAuthorize("hasAnyAuthority('U','M','T','P')")
 	@RequestMapping(value = "/joinactivity", method = RequestMethod.GET)
 	public String joinactivity(Model model, String userId) {
 
 		List<TActivity> checkEntityList = activityService.selectCheck();
 		List<ActivityFormBean> checkList = new ArrayList<ActivityFormBean>();
-//		List<TOrder> order = userService.getIdByActivity(userId);
-		
-		for(TActivity entity :checkEntityList) {
+		// List<TOrder> order = userService.getIdByActivity(userId);
+
+		for (TActivity entity : checkEntityList) {
 			ActivityFormBean bean = new ActivityFormBean();
 			bean.setActivityId(entity.getActivityId());
 			bean.setActivityName(entity.getActivityName());
@@ -214,11 +207,8 @@ public class MemberHomeController {
 			checkList.add(bean);
 		}
 
- 		
- 		
-		model.addAttribute("checkList",checkList);
+		model.addAttribute("checkList", checkList);
 		return "/user/joinactivity";
 
-	
 	}
 }
